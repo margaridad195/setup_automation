@@ -1,0 +1,6 @@
+---
+- name: Project Setup Automation
+  hosts: localhost
+  become: yes
+  roles:
+    - packages

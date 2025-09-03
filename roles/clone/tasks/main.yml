@@ -1,0 +1,17 @@
+---
+# ----------------------------
+# Clone GitHub Repositories
+# ----------------------------
+- name: Ensure project root exists
+  ansible.builtin.file:
+    path: "{{ project_root }}"
+    state: directory
+    mode: '0755'
+
+- name: Clone repositories
+  ansible.builtin.git:
+    repo: "{{ item }}"
+    dest: "{{ project_root }}/{{ item | basename | regex_replace('.git','') }}"
+    version: main
+    key_file: "{{ ssh_key_path }}"
+  loop: "{{ github_repos }}"

@@ -1,0 +1,7 @@
+---
+project_root: "{{ lookup('env','HOME') }}/projects"
+github_repos:
+  - git@github.com:myorg/repo1.git
+  - git@github.com:myorg/repo2.git
+ssh_key_path: "{{ lookup('env','HOME') }}/.ssh/id_rsa"
+

@@ -1,0 +1,139 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install base dependencies
+  ansible.builtin.apt:
+    name:
+      - python3
+      - python3-pip
+      - unzip
+      - curl
+      - git
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - lsb-release
+    state: present
+
+# ----------------------------
+# AWS CLI
+# ----------------------------
+
+- name: Check if AWS CLI is installed
+  command: aws --version
+  register: aws_cli_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Download AWS CLI installer
+  get_url:
+    url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+    dest: "/tmp/awscliv2.zip"
+  when: aws_cli_check.rc != 0
+
+- name: Unzip AWS CLI installer
+  unarchive:
+    src: "/tmp/awscliv2.zip"
+    dest: "/tmp"
+    remote_src: yes
+  when: aws_cli_check.rc != 0
+
+- name: Run AWS CLI installer
+  command: "/tmp/aws/install"
+  when: aws_cli_check.rc != 0
+
+- name: Verify AWS CLI installation
+  command: "aws --version"
+  register: aws_cli_version
+
+- name: Display AWS CLI version
+  debug:
+    msg: "{{ aws_cli_version.stdout }}"
+
+# ----------------------------
+# kubectl
+# ----------------------------
+- name: Get latest kubectl version
+  command: curl -L -s https://dl.k8s.io/release/stable.txt
+  register: kubectl_version
+  changed_when: false
+
+- name: Download kubectl
+  get_url:
+    url: "https://dl.k8s.io/release/{{ kubectl_version.stdout }}/bin/linux/amd64/kubectl"
+    dest: "/usr/local/bin/kubectl"
+    mode: '0755'
+
+# ----------------------------
+# Docker Engine
+# ----------------------------
+- name: Add Docker GPG key
+  ansible.builtin.apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker repository
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: Install Docker Engine
+  ansible.builtin.apt:
+        name: 
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+        update_cache: yes
+
+- name: Enable and start Docker service
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Add current user to docker group
+  ansible.builtin.user:
+    name: "{{ ansible_user_id }}"
+    groups: docker
+    append: yes
+
+# ----------------------------
+# K9S
+# ----------------------------
+- name: Download latest K9S tarball
+  ansible.builtin.get_url:
+    url: "https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_amd64.tar.gz"
+    dest: "/tmp/k9s.tar.gz"
+    mode: '0644'
+
+- name: Extract K9S binary
+  ansible.builtin.unarchive:
+    src: "/tmp/k9s.tar.gz"
+    dest: "/usr/local/bin/"
+    remote_src: yes
+    mode: '0755'
+
+# ----------------------------
+# GitHub SSH Key
+# ----------------------------
+- name: Ensure SSH directory exists
+  ansible.builtin.file:
+    path: "{{ lookup('env','HOME') }}/.ssh"
+    state: directory
+    mode: '0700'
+    owner: "{{ ansible_user_id }}"
+
+- name: Generate SSH key if missing
+  community.crypto.openssh_keypair:
+    path: "{{ ssh_key_path }}"
+    type: rsa
+    size: 4096
+    comment: "ansible-generated-key"
+  register: ssh_key_result
+
+- name: Show public key (add it to GitHub manually)
+  ansible.builtin.debug:
+    msg: "Add this public key to GitHub:\n {{ ssh_key_result.public_key }}"
