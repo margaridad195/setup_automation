@@ -1,2 +1,2 @@
 ---
-ssh_key_path: "{{ lookup('env','HOME') }}/.ssh/repo_key"
+ssh_key_path: "{{ lookup('env','HOME') }}/.ssh/id_ed1996"

@@ -3,4 +3,9 @@
   hosts: localhost
   become: yes
   roles:
-    - packages
+    - role: packages
+      tags:
+        - packages
+    - role: clone
+      tags:
+        - clone
