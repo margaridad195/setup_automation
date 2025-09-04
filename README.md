@@ -34,12 +34,10 @@ ansible-playbook project_setup.yml --tags "packages" --ask-become-pass
 ### 3. Clone Repositories
 
 1. Go to roles/clone/vars/main.yml and update the github_repos list with your repositories.
-a. Godel repositories: 
- - git@github.com:myorg/godel.git
- - git@github.com:myorg/godel-cli.git
-b. Turing repositories:
- - git@github.com:myorg/turing.git
- - git@github.com:myorg/turing-frontend.git
+a. Repositories: 
+ - git@github.com:myorg/<name>.git
+ - git@github.com:myorg/<name>.git
+
 
 2. Run the clone role to clone your repositories:
 
